@@ -1,6 +1,7 @@
 const User = require('../models/User')
 const bcrypt = require('bcrypt')
 
+// CREATE USER
 exports.createUser = async (req, res) => {
 	try {
 		const { name, phone, password, role } = req.body
@@ -18,6 +19,7 @@ exports.createUser = async (req, res) => {
 	}
 }
 
+// UPDATE USER
 exports.updateUser = async (req, res) => {
 	try {
 		const { id } = req.params
@@ -35,6 +37,7 @@ exports.updateUser = async (req, res) => {
 	}
 }
 
+// DELETE USER
 exports.deleteUser = async (req, res) => {
 	try {
 		const { id } = req.params
