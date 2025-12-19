@@ -1,14 +1,14 @@
 const express = require('express')
 const router = express.Router()
-const { registerAdmin, login } = require('../controllers/auth.controller')
+const authController = require('../controllers/auth.controller')
+const { authMiddleware } = require('../middlewares/auth.middleware')
 
 /**
  * @swagger
- * /api/auth/register-admin:
+ * /api/auth/register:
  *   post:
- *     summary: Register the first admin
- *     tags:
- *       - Auth
+ *     summary: Register a new user
+ *     tags: [Auth]
  *     requestBody:
  *       required: true
  *       content:
@@ -19,28 +19,41 @@ const { registerAdmin, login } = require('../controllers/auth.controller')
  *               - name
  *               - phone
  *               - password
+ *               - role
  *             properties:
  *               name:
  *                 type: string
+ *                 example: "John Doe"
  *               phone:
  *                 type: string
+ *                 example: "998901112233"
  *               password:
  *                 type: string
+ *                 example: "password123"
+ *               role:
+ *                 type: string
+ *                 enum: [admin, teacher, student, parent]
+ *                 example: "student"
+ *               parentPhone:
+ *                 type: string
+ *                 description: "Only for students"
+ *                 example: "998901112244"
  *     responses:
  *       201:
- *         description: Admin registered successfully
+ *         description: User registered successfully
  *       400:
- *         description: Admin already exists
+ *         description: Validation error
+ *       409:
+ *         description: User already exists
  */
-router.post('/register-admin', registerAdmin)
+router.post('/register', authController.register)
 
 /**
  * @swagger
  * /api/auth/login:
  *   post:
  *     summary: Login user
- *     tags:
- *       - Auth
+ *     tags: [Auth]
  *     requestBody:
  *       required: true
  *       content:
@@ -53,14 +66,34 @@ router.post('/register-admin', registerAdmin)
  *             properties:
  *               phone:
  *                 type: string
+ *                 example: "998901112233"
  *               password:
  *                 type: string
+ *                 example: "password123"
  *     responses:
  *       200:
- *         description: Returns JWT token and role
- *       400:
- *         description: User not found or incorrect password
+ *         description: Login successful
+ *       401:
+ *         description: Invalid credentials
+ *       404:
+ *         description: User not found
  */
-router.post('/login', login)
+router.post('/login', authController.login)
+
+/**
+ * @swagger
+ * /api/auth/profile:
+ *   get:
+ *     summary: Get user profile
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: User profile data
+ *       401:
+ *         description: Unauthorized
+ */
+router.get('/profile', authMiddleware(), authController.getProfile)
 
 module.exports = router

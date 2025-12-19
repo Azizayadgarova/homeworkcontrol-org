@@ -1,22 +1,35 @@
 const express = require('express')
 const router = express.Router()
-const {
-	createUser,
-	updateUser,
-	deleteUser,
-} = require('../controllers/admin.controller')
-
 const { authMiddleware } = require('../middlewares/auth.middleware')
+const adminController = require('../controllers/admin.controller')
 
-router.use(authMiddleware(['admin'])) // faqat admin ruxsat
+// Admin only routes
+router.use(authMiddleware(['admin']))
+
+/**
+ * @swagger
+ * /api/admin/users:
+ *   get:
+ *     summary: Get all users
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of all users
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden (not admin)
+ */
+router.get('/users', adminController.getAllUsers)
 
 /**
  * @swagger
  * /api/admin/users:
  *   post:
- *     summary: Create a new user (admin only)
- *     tags:
- *       - Admin
+ *     summary: Create a new user
+ *     tags: [Admin]
  *     security:
  *       - bearerAuth: []
  *     requestBody:
@@ -40,73 +53,72 @@ router.use(authMiddleware(['admin'])) // faqat admin ruxsat
  *               role:
  *                 type: string
  *                 enum: [admin, teacher, student, parent]
+ *               parentId:
+ *                 type: string
+ *                 description: "For students only - parent ID"
  *     responses:
  *       201:
  *         description: User created successfully
  *       400:
- *         description: User already exists
+ *         description: Validation error
  */
-router.post('/users', createUser)
+router.post('/users', adminController.createUser)
 
 /**
  * @swagger
- * /api/admin/users/{id}:
- *   put:
- *     summary: Update a user by ID (admin only)
- *     tags:
- *       - Admin
+ * /api/admin/link-parent-student:
+ *   post:
+ *     summary: Link parent and student
+ *     tags: [Admin]
  *     security:
  *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
  *     requestBody:
+ *       required: true
  *       content:
  *         application/json:
  *           schema:
  *             type: object
+ *             required:
+ *               - parentId
+ *               - studentId
  *             properties:
- *               name:
+ *               parentId:
  *                 type: string
- *               phone:
+ *                 example: "507f1f77bcf86cd799439011"
+ *               studentId:
  *                 type: string
- *               password:
- *                 type: string
- *               role:
- *                 type: string
- *                 enum: [admin, teacher, student, parent]
+ *                 example: "507f1f77bcf86cd799439012"
  *     responses:
  *       200:
- *         description: User updated
+ *         description: Parent and student linked successfully
+ *       400:
+ *         description: Invalid data
  *       404:
- *         description: User not found
+ *         description: Parent or student not found
  */
-router.put('/users/:id', updateUser)
+router.post('/link-parent-student', adminController.linkParentStudent)
 
 /**
  * @swagger
- * /api/admin/users/{id}:
- *   delete:
- *     summary: Delete a user by ID (admin only)
- *     tags:
- *       - Admin
+ * /api/admin/parent/{parentId}/children:
+ *   get:
+ *     summary: Get parent's children
+ *     tags: [Admin]
  *     security:
  *       - bearerAuth: []
  *     parameters:
  *       - in: path
- *         name: id
+ *         name: parentId
  *         required: true
  *         schema:
  *           type: string
+ *         description: Parent user ID
  *     responses:
  *       200:
- *         description: User deleted
+ *         description: List of parent's children
  *       404:
- *         description: User not found
+ *         description: Parent not found
  */
-router.delete('/users/:id', deleteUser)
+router.get('/parent/:parentId/children', adminController.getParentChildren)
 
 module.exports = router

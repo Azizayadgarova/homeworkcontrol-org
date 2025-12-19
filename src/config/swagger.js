@@ -1,21 +1,26 @@
-const swaggerJsDoc = require('swagger-jsdoc')
+const swaggerJsdoc = require('swagger-jsdoc')
+const swaggerUi = require('swagger-ui-express')
 
-const swaggerOptions = {
+const options = {
 	definition: {
 		openapi: '3.0.0',
 		info: {
 			title: 'Homework Control API',
 			version: '1.0.0',
-			description: 'Homework Control backend API documentation',
+			description: 'Homework Control System API Documentation',
+			contact: {
+				name: 'API Support',
+				email: 'support@example.com',
+			},
 		},
 		servers: [
 			{
-				url: 'http://localhost:5000', // local server
-				description: 'Local server',
+				url: 'http://localhost:5000',
+				description: 'Development server',
 			},
 			{
-				url: 'https://homeworkcontrol.onrender.com', // production server
-				description: 'Global server',
+				url: 'https://homeworkcontrol.onrender.com',
+				description: 'Production server',
 			},
 		],
 		components: {
@@ -27,9 +32,28 @@ const swaggerOptions = {
 				},
 			},
 		},
-		security: [{ bearerAuth: [] }],
+		security: [
+			{
+				bearerAuth: [],
+			},
+		],
 	},
-	apis: ['./src/routes/*.js'], // Swagger commentlar joylashgan route fayllar
+	apis: ['./src/routes/*.js', './src/controllers/*.js'], // API fayllari joyi
 }
 
-module.exports = swaggerJsDoc(swaggerOptions)
+const swaggerSpec = swaggerJsdoc(options)
+
+const swaggerDocs = (app, port) => {
+	// Swagger page
+	app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec))
+
+	// Docs in JSON format
+	app.get('/api-docs.json', (req, res) => {
+		res.setHeader('Content-Type', 'application/json')
+		res.send(swaggerSpec)
+	})
+
+	console.log(`📚 Swagger docs available at http://localhost:${port}/api-docs`)
+}
+
+module.exports = { swaggerDocs }

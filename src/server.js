@@ -1,30 +1,58 @@
+// src/server.js (to'liq yangi versiya)
 require('dotenv').config()
 const express = require('express')
-const connectDB = require('./config/db')
-
-const swaggerUI = require('swagger-ui-express')
-const swaggerJsDoc = require('./config/swagger')
+const mongoose = require('mongoose')
+const { swaggerDocs } = require('./config/swagger')
 
 const app = express()
+
+// Middleware
 app.use(express.json())
 
-// Swagger
-app.use('/api-docs', swaggerUI.serve, swaggerUI.setup(swaggerJsDoc))
+// Database
+mongoose
+	.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/homeworkcontrol')
+	.then(() => console.log('✅ MongoDB connected'))
+	.catch(err => console.log('❌ MongoDB error:', err.message))
 
 // Routes
-app.use('/api/auth', require('./routes/auth.routes'))
-app.use('/api/admin', require('./routes/admin.routes'))
+app.get('/', (req, res) => {
+	res.json({
+		message: 'Homework Control API',
+		version: '1.0.0',
+		docs: '/api-docs',
+		auth: '/api/auth',
+		admin: '/api/admin',
+	})
+})
 
-// MongoDB va server
-const startServer = async () => {
-	try {
-		await connectDB()
-		const PORT = process.env.PORT || 5000
-		app.listen(PORT, () => console.log(`Server running on port ${PORT}`))
-	} catch (err) {
-		console.error('Failed to connect to MongoDB:', err)
-		process.exit(1)
-	}
+// Load routes
+try {
+	app.use('/api/auth', require('./routes/auth.routes'))
+	console.log('✅ Auth routes loaded')
+} catch (err) {
+	console.error('Auth routes error:', err.message)
 }
 
-startServer()
+try {
+	app.use('/api/admin', require('./routes/admin.routes'))
+	console.log('✅ Admin routes loaded')
+} catch (err) {
+	console.error('Admin routes error:', err.message)
+}
+
+// Start server with port 5001
+const PORT = 5001 // 👈 HARDOCODE QILDIK
+
+app.listen(PORT, () => {
+	console.log(`🚀 Server running on port ${PORT}`)
+	console.log(`🌐 http://localhost:${PORT}`)
+
+	// Swagger docs
+	try {
+		const { swaggerDocs } = require('./config/swagger')
+		swaggerDocs(app, PORT)
+	} catch (err) {
+		console.log('Swagger not loaded:', err.message)
+	}
+})
