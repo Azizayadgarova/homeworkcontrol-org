@@ -15,12 +15,10 @@ const options = {
 		},
 		servers: [
 			{
-				url: 'http://localhost:5000',
-				description: 'Development server',
+				url: 'http://localhost:5000/api',
 			},
 			{
-				url: 'https://homeworkcontrol.onrender.com',
-				description: 'Production server',
+				url: 'https://homeworkcontrol.onrender.com/api',
 			},
 		],
 		components: {

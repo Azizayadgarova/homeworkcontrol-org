@@ -1,17 +1,28 @@
-// src/server.js (to'liq yangi versiya)
 require('dotenv').config()
 const express = require('express')
 const mongoose = require('mongoose')
+const cors = require('cors')
 const { swaggerDocs } = require('./config/swagger')
 
 const app = express()
 
-// Middleware
+// 🔥 CORS — ENG MUHIM QATOR
+app.use(
+	cors({
+		origin: [
+			'http://localhost:5173',
+			'http://localhost:3000',
+			'https://YOUR-FRONTEND.vercel.app',
+		],
+		credentials: true,
+	})
+)
+
 app.use(express.json())
 
 // Database
 mongoose
-	.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/homeworkcontrol')
+	.connect(process.env.MONGO_URI)
 	.then(() => console.log('✅ MongoDB connected'))
 	.catch(err => console.log('❌ MongoDB error:', err.message))
 
@@ -20,39 +31,20 @@ app.get('/', (req, res) => {
 	res.json({
 		message: 'Homework Control API',
 		version: '1.0.0',
-		docs: '/api-docs',
-		auth: '/api/auth',
-		admin: '/api/admin',
 	})
 })
 
-// Load routes
-try {
-	app.use('/api/auth', require('./routes/auth.routes'))
-	console.log('✅ Auth routes loaded')
-} catch (err) {
-	console.error('Auth routes error:', err.message)
-}
+app.use('/api/auth', require('./routes/auth.routes'))
+app.use('/api/admin', require('./routes/admin.routes'))
+app.use('/api/parent', require('./routes/parent.routes'))
+app.use('/api/student', require('./routes/student.routes'))
+app.use('/api/teacher', require('./routes/teacher.routes'))
+app.use('/api/tasks', require('./routes/task.routes'))
 
-try {
-	app.use('/api/admin', require('./routes/admin.routes'))
-	console.log('✅ Admin routes loaded')
-} catch (err) {
-	console.error('Admin routes error:', err.message)
-}
-
-// Start server with port 5001
-const PORT = 5001 // 👈 HARDOCODE QILDIK
+// ❗ PORT ENV dan olinadi
+const PORT = process.env.PORT || 5000
 
 app.listen(PORT, () => {
 	console.log(`🚀 Server running on port ${PORT}`)
-	console.log(`🌐 http://localhost:${PORT}`)
-
-	// Swagger docs
-	try {
-		const { swaggerDocs } = require('./config/swagger')
-		swaggerDocs(app, PORT)
-	} catch (err) {
-		console.log('Swagger not loaded:', err.message)
-	}
+	swaggerDocs(app, PORT)
 })
