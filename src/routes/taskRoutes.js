@@ -9,6 +9,7 @@ const {
 const { protect } = require('../middlewares/authMiddleware')
 const { authorizeRoles } = require('../middlewares/roleMiddleware')
 
+// Task CRUD
 router
 	.route('/')
 	.get(protect, getTasks)

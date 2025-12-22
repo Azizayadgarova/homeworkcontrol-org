@@ -1,62 +1,72 @@
 const Task = require('../models/Task')
-const Group = require('../models/Group')
 
-// CREATE task (admin/teacher)
+// Task yaratish (teacher/admin)
 const createTask = async (req, res) => {
-	const { title, description, lessonNumber, deadline, groupId } = req.body
-	const group = await Group.findById(groupId)
-	if (!group) return res.status(404).json({ message: 'Group not found' })
-	if (
-		req.user.role === 'teacher' &&
-		group.teacher.toString() !== req.user._id.toString()
-	)
-		return res.status(403).json({ message: 'Not authorized for this group' })
+	try {
+		const { title, description, lessonNumber, deadline, groupId } = req.body
 
-	const task = await Task.create({
-		title,
-		description,
-		lessonNumber,
-		deadline,
-		group: groupId,
-		teacher: req.user._id,
-	})
-	res.status(201).json(task)
+		const task = await Task.create({
+			title,
+			description,
+			lessonNumber,
+			deadline: deadline ? new Date(deadline) : null,
+			group: groupId,
+		})
+
+		res.status(201).json(task)
+	} catch (err) {
+		console.error(err)
+		res.status(500).json({ message: 'Server error', error: err.message })
+	}
 }
 
-// GET tasks by group
+// Guruh vazifalarini olish
 const getTasks = async (req, res) => {
-	const { groupId } = req.query
-	const tasks = await Task.find({ group: groupId }).populate('submissions')
-	res.json(tasks)
+	try {
+		const { groupId } = req.query
+		const tasks = await Task.find({ group: groupId }).populate({
+			path: 'submissions',
+			populate: { path: 'student', select: 'name phone' },
+		})
+		res.json(tasks)
+	} catch (err) {
+		console.error(err)
+		res.status(500).json({ message: 'Server error', error: err.message })
+	}
 }
 
-// UPDATE task
+// Taskni o‘zgartirish
 const updateTask = async (req, res) => {
-	const task = await Task.findById(req.params.id)
-	if (!task) return res.status(404).json({ message: 'Task not found' })
-	if (
-		req.user.role === 'teacher' &&
-		task.teacher.toString() !== req.user._id.toString()
-	)
-		return res.status(403).json({ message: 'Not authorized for this task' })
+	try {
+		const task = await Task.findById(req.params.id)
+		if (!task) return res.status(404).json({ message: 'Task not found' })
 
-	Object.assign(task, req.body)
-	await task.save()
-	res.json(task)
+		const { title, description, lessonNumber, deadline } = req.body
+		if (title) task.title = title
+		if (description) task.description = description
+		if (lessonNumber) task.lessonNumber = lessonNumber
+		if (deadline) task.deadline = new Date(deadline)
+
+		await task.save()
+		res.json(task)
+	} catch (err) {
+		console.error(err)
+		res.status(500).json({ message: 'Server error', error: err.message })
+	}
 }
 
-// DELETE task
+// Taskni o‘chirish
 const deleteTask = async (req, res) => {
-	const task = await Task.findById(req.params.id)
-	if (!task) return res.status(404).json({ message: 'Task not found' })
-	if (
-		req.user.role === 'teacher' &&
-		task.teacher.toString() !== req.user._id.toString()
-	)
-		return res.status(403).json({ message: 'Not authorized for this task' })
+	try {
+		const task = await Task.findById(req.params.id)
+		if (!task) return res.status(404).json({ message: 'Task not found' })
 
-	await task.remove()
-	res.json({ message: 'Task removed' })
+		await task.remove()
+		res.json({ message: 'Task removed' })
+	} catch (err) {
+		console.error(err)
+		res.status(500).json({ message: 'Server error', error: err.message })
+	}
 }
 
 module.exports = { createTask, getTasks, updateTask, deleteTask }

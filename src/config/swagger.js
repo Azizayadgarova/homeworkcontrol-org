@@ -7,7 +7,7 @@ const options = {
 		info: {
 			title: 'Homework Control API',
 			version: '1.0.0',
-			description: 'Homework Control System API Documentation',
+			description: 'Uyga vazifa tizimi API dokumentatsiyasi',
 			contact: {
 				name: 'API Support',
 				email: 'support@example.com',
@@ -15,10 +15,10 @@ const options = {
 		},
 		servers: [
 			{
-				url: 'http://localhost:5000/api',
+				url: 'https://homeworkcontrol.onrender.com/api', // global URL
 			},
 			{
-				url: 'https://homeworkcontrol.onrender.com/api',
+				url: 'http://localhost:5000/api', // lokal dev uchun
 			},
 		],
 		components: {
@@ -36,22 +36,27 @@ const options = {
 			},
 		],
 	},
-	apis: ['./src/routes/*.js', './src/controllers/*.js'], // API fayllari joyi
+	apis: ['./src/routes/*.js', './src/controllers/*.js'], // fayllaringiz joylashgan joy
 }
 
 const swaggerSpec = swaggerJsdoc(options)
 
 const swaggerDocs = (app, port) => {
-	// Swagger page
+	// Swagger UI
 	app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec))
 
-	// Docs in JSON format
+	// JSON format dokumentatsiya
 	app.get('/api-docs.json', (req, res) => {
 		res.setHeader('Content-Type', 'application/json')
 		res.send(swaggerSpec)
 	})
 
-	console.log(`📚 Swagger docs available at http://localhost:${port}/api-docs`)
+	console.log(
+		`📚 Swagger docs available at https://homeworkcontrol.onrender.com/api-docs`
+	)
+	console.log(
+		`📚 JSON docs available at https://homeworkcontrol.onrender.com/api-docs.json`
+	)
 }
 
 module.exports = { swaggerDocs }
