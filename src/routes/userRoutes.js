@@ -1,35 +1,58 @@
 const express = require('express')
 const router = express.Router()
-const { authMiddleware } = require('../middlewares/authMiddleware.js')
-const adminController = require('../controllers/authController.js')
-
-// Admin only routes
-router.use(authMiddleware(['admin']))
-
-/**
- * @swagger
- * /api/admin/users:
- *   get:
- *     summary: Get all users
- *     tags: [Admin]
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: List of all users
- *       401:
- *         description: Unauthorized
- *       403:
- *         description: Forbidden (not admin)
- */
-router.get('/users', adminController.getAllUsers)
+const {
+	register,
+	login,
+	linkParentStudent,
+	getParentChildren,
+} = require('../controllers/authController')
+const { protect } = require('../middlewares/authMiddleware')
+const { authorizeRoles } = require('../middlewares/roleMiddleware')
 
 /**
  * @swagger
- * /api/admin/users:
+ * /auth/create-admin:
  *   post:
- *     summary: Create a new user
- *     tags: [Admin]
+ *     summary: Create first admin user
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - name
+ *               - phone
+ *               - password
+ *             properties:
+ *               name:
+ *                 type: string
+ *               phone:
+ *                 type: string
+ *               password:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: Admin created
+ *       400:
+ *         description: Admin already exists
+ */
+router.post('/create-admin', async (req, res) => {
+	const { name, phone, password } = req.body
+	const User = require('../models/User')
+	const exists = await User.findOne({ phone })
+	if (exists) return res.status(400).json({ message: 'Admin already exists' })
+	const user = await User.create({ name, phone, password, role: 'admin' })
+	res.status(201).json({ message: 'Admin created', user })
+})
+
+/**
+ * @swagger
+ * /auth/register:
+ *   post:
+ *     summary: Register a new user (admin only)
+ *     tags: [Auth]
  *     security:
  *       - bearerAuth: []
  *     requestBody:
@@ -53,23 +76,44 @@ router.get('/users', adminController.getAllUsers)
  *               role:
  *                 type: string
  *                 enum: [admin, teacher, student, parent]
- *               parentId:
- *                 type: string
- *                 description: "For students only - parent ID"
  *     responses:
  *       201:
  *         description: User created successfully
- *       400:
- *         description: Validation error
  */
-router.post('/users', adminController.createUser)
+router.post('/register', protect, authorizeRoles('admin'), register)
 
 /**
  * @swagger
- * /api/admin/link-parent-student:
+ * /auth/login:
+ *   post:
+ *     summary: Login user
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - phone
+ *               - password
+ *             properties:
+ *               phone:
+ *                 type: string
+ *               password:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Login successful, returns token
+ */
+router.post('/login', login)
+
+/**
+ * @swagger
+ * /auth/link-parent-student:
  *   post:
  *     summary: Link parent and student
- *     tags: [Admin]
+ *     tags: [Auth]
  *     security:
  *       - bearerAuth: []
  *     requestBody:
@@ -84,26 +128,25 @@ router.post('/users', adminController.createUser)
  *             properties:
  *               parentId:
  *                 type: string
- *                 example: "507f1f77bcf86cd799439011"
  *               studentId:
  *                 type: string
- *                 example: "507f1f77bcf86cd799439012"
  *     responses:
  *       200:
- *         description: Parent and student linked successfully
- *       400:
- *         description: Invalid data
- *       404:
- *         description: Parent or student not found
+ *         description: Parent and student linked
  */
-router.post('/link-parent-student', adminController.linkParentStudent)
+router.post(
+	'/link-parent-student',
+	protect,
+	authorizeRoles('admin'),
+	linkParentStudent
+)
 
 /**
  * @swagger
- * /api/admin/parent/{parentId}/children:
+ * /auth/parent/{parentId}/children:
  *   get:
  *     summary: Get parent's children
- *     tags: [Admin]
+ *     tags: [Auth]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -112,13 +155,15 @@ router.post('/link-parent-student', adminController.linkParentStudent)
  *         required: true
  *         schema:
  *           type: string
- *         description: Parent user ID
  *     responses:
  *       200:
- *         description: List of parent's children
- *       404:
- *         description: Parent not found
+ *         description: List of children
  */
-router.get('/parent/:parentId/children', adminController.getParentChildren)
+router.get(
+	'/parent/:parentId/children',
+	protect,
+	authorizeRoles('parent'),
+	getParentChildren
+)
 
 module.exports = router

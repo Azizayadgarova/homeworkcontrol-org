@@ -11,40 +11,57 @@ const { authorizeRoles } = require('../middlewares/roleMiddleware')
 
 /**
  * @swagger
- * /api/tasks:
+ * /tasks:
  *   get:
- *     summary: Get all tasks (all roles)
- *     tags: [Task]
+ *     summary: Get all tasks
+ *     tags: [Tasks]
  *     security:
  *       - bearerAuth: []
- *   post:
- *     summary: Create task (admin/teacher)
- *     tags: [Task]
- *     security:
- *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of tasks
  */
-router
-	.route('/')
-	.get(protect, getTasks)
-	.post(protect, authorizeRoles('admin', 'teacher'), createTask)
+router.get('/', protect, getTasks)
 
 /**
  * @swagger
- * /api/tasks/{id}:
- *   patch:
- *     summary: Update task (admin/teacher)
- *     tags: [Task]
+ * /tasks:
+ *   post:
+ *     summary: Create a task (admin or teacher)
+ *     tags: [Tasks]
  *     security:
  *       - bearerAuth: []
- *   delete:
- *     summary: Delete task (admin/teacher)
- *     tags: [Task]
- *     security:
- *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - title
+ *               - description
+ *               - lessonNumber
+ *               - deadline
+ *               - groupId
+ *             properties:
+ *               title:
+ *                 type: string
+ *               description:
+ *                 type: string
+ *               lessonNumber:
+ *                 type: number
+ *               deadline:
+ *                 type: string
+ *                 format: date-time
+ *               groupId:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: Task created
  */
-router
-	.route('/:id')
-	.patch(protect, authorizeRoles('admin', 'teacher'), updateTask)
-	.delete(protect, authorizeRoles('admin', 'teacher'), deleteTask)
+router.post('/', protect, authorizeRoles('admin', 'teacher'), createTask)
+
+router.patch('/:id', protect, authorizeRoles('admin', 'teacher'), updateTask)
+router.delete('/:id', protect, authorizeRoles('admin', 'teacher'), deleteTask)
 
 module.exports = router

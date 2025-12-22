@@ -11,40 +11,90 @@ const { authorizeRoles } = require('../middlewares/roleMiddleware')
 
 /**
  * @swagger
- * /api/groups:
+ * /groups:
  *   get:
- *     summary: Get all groups (teacher/admin)
- *     tags: [Group]
+ *     summary: Get all groups
+ *     tags: [Groups]
  *     security:
  *       - bearerAuth: []
- *   post:
- *     summary: Create new group (admin only)
- *     tags: [Group]
- *     security:
- *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of groups
  */
-router
-	.route('/')
-	.get(protect, getGroups)
-	.post(protect, authorizeRoles('admin'), createGroup)
+router.get('/', protect, getGroups)
 
 /**
  * @swagger
- * /api/groups/{id}:
- *   patch:
- *     summary: Update group (admin only)
- *     tags: [Group]
+ * /groups:
+ *   post:
+ *     summary: Create a group (admin only)
+ *     tags: [Groups]
  *     security:
  *       - bearerAuth: []
- *   delete:
- *     summary: Delete group (admin only)
- *     tags: [Group]
- *     security:
- *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - name
+ *             properties:
+ *               name:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: Group created
  */
-router
-	.route('/:id')
-	.patch(protect, authorizeRoles('admin'), updateGroup)
-	.delete(protect, authorizeRoles('admin'), deleteGroup)
+router.post('/', protect, authorizeRoles('admin'), createGroup)
+
+/**
+ * @swagger
+ * /groups/{id}:
+ *   patch:
+ *     summary: Update group by ID (admin only)
+ *     tags: [Groups]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Group updated
+ */
+router.patch('/:id', protect, authorizeRoles('admin'), updateGroup)
+
+/**
+ * @swagger
+ * /groups/{id}:
+ *   delete:
+ *     summary: Delete group by ID (admin only)
+ *     tags: [Groups]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Group deleted
+ */
+router.delete('/:id', protect, authorizeRoles('admin'), deleteGroup)
 
 module.exports = router
