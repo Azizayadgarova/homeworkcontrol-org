@@ -1,7 +1,7 @@
 const express = require('express')
 const router = express.Router()
-const { authMiddleware } = require('../middlewares/auth.middleware')
-const adminController = require('../controllers/admin.controller')
+const { authMiddleware } = require('../middlewares/authMiddleware.js')
+const adminController = require('../controllers/authController.js')
 
 // Admin only routes
 router.use(authMiddleware(['admin']))

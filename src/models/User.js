@@ -1,81 +1,30 @@
 const mongoose = require('mongoose')
+const bcrypt = require('bcryptjs')
 
 const userSchema = new mongoose.Schema(
 	{
-		name: {
-			type: String,
-			required: true,
-			trim: true,
-		},
-		phone: {
-			type: String,
-			required: true,
-			unique: true,
-		},
-		password: {
-			type: String,
-			required: true,
-		},
+		name: { type: String, required: true },
+		phone: { type: String, required: true, unique: true },
+		password: { type: String, required: true },
 		role: {
 			type: String,
 			enum: ['admin', 'teacher', 'student', 'parent'],
-			default: 'student',
+			required: true,
 		},
-		parent: {
-			type: mongoose.Schema.Types.ObjectId,
-			ref: 'User',
-			default: null,
-		},
-		children: [
-			{
-				type: mongoose.Schema.Types.ObjectId,
-				ref: 'User',
-				default: [],
-			},
-		],
-		status: {
-			type: String,
-			enum: ['active', 'inactive'],
-			default: 'active',
-		},
+		group: { type: mongoose.Schema.Types.ObjectId, ref: 'Group' },
+		child: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
 	},
-	{
-		timestamps: true,
-	}
+	{ timestamps: true }
 )
 
-// Phone number formatter - yangi usul
 userSchema.pre('save', async function () {
-	if (this.phone && this.isModified('phone')) {
-		// Remove all non-digit characters
-		let phone = this.phone.replace(/\D/g, '')
-
-		// Ensure it starts with 998
-		if (phone.length === 9) {
-			phone = '998' + phone
-		}
-
-		this.phone = phone
-	}
-
-	// Agar parol o'zgartirilsa, hash qilish
-	if (this.isModified('password')) {
-		const bcrypt = require('bcrypt')
-		this.password = await bcrypt.hash(this.password, 10)
-	}
+	if (!this.isModified('password')) return
+	const salt = await bcrypt.genSalt(10)
+	this.password = await bcrypt.hash(this.password, salt)
 })
 
-// FindOneAndUpdate uchun telefon formatter
-userSchema.pre('findOneAndUpdate', async function () {
-	const update = this.getUpdate()
-
-	if (update.$set && update.$set.phone) {
-		let phone = update.$set.phone.replace(/\D/g, '')
-		if (phone.length === 9) {
-			phone = '998' + phone
-		}
-		update.$set.phone = phone
-	}
-})
+userSchema.methods.matchPassword = async function (enteredPassword) {
+	return await bcrypt.compare(enteredPassword, this.password)
+}
 
 module.exports = mongoose.model('User', userSchema)
