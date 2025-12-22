@@ -8,13 +8,34 @@ const {
 const { protect } = require('../middlewares/authMiddleware')
 const { authorizeRoles } = require('../middlewares/roleMiddleware')
 
-// Student submission
+/**
+ * @swagger
+ * /api/submissions:
+ *   get:
+ *     summary: Get submissions (all roles)
+ *     tags: [Submission]
+ *     security:
+ *       - bearerAuth: []
+ *   post:
+ *     summary: Student submit task
+ *     tags: [Submission]
+ *     security:
+ *       - bearerAuth: []
+ */
 router
 	.route('/')
 	.get(protect, getSubmissions)
 	.post(protect, authorizeRoles('student'), createSubmission)
 
-// Teacher update
+/**
+ * @swagger
+ * /api/submissions/{id}:
+ *   patch:
+ *     summary: Teacher update submission (score/status/comment)
+ *     tags: [Submission]
+ *     security:
+ *       - bearerAuth: []
+ */
 router.route('/:id').patch(protect, authorizeRoles('teacher'), updateSubmission)
 
 module.exports = router
