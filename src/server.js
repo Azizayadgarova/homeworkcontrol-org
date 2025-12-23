@@ -23,6 +23,7 @@ app.use('/api/auth', authRoutes)
 app.use('/api/groups', groupRoutes)
 app.use('/api/tasks', taskRoutes)
 app.use('/api/submissions', submissionRoutes)
+app.use('/api/stats', require('./routes/statsRoutes'))
 
 // Swagger
 swaggerDocs(app, process.env.PORT || 5000)
