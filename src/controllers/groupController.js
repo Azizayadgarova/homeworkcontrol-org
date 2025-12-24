@@ -4,7 +4,15 @@ const User = require('../models/User')
 // CREATE group (ADMIN)
 const createGroup = async (req, res) => {
 	try {
-		const { name, schedule, teacherId } = req.body
+		const { name, schedule, teacherId, students, level } = req.body
+
+		if (!level) {
+			return res.status(400).json({ message: 'Level is required' })
+		}
+
+		if (!Array.isArray(schedule) || schedule.length === 0) {
+			return res.status(400).json({ message: 'Schedule is required' })
+		}
 
 		const teacher = await User.findById(teacherId)
 		if (!teacher || teacher.role !== 'teacher') {
@@ -15,6 +23,8 @@ const createGroup = async (req, res) => {
 			name,
 			schedule,
 			teacher: teacherId,
+			students: students || [],
+			level,
 		})
 
 		res.status(201).json(group)
@@ -26,17 +36,16 @@ const createGroup = async (req, res) => {
 // GET groups
 const getGroups = async (req, res) => {
 	try {
+		let groups
 		if (req.user.role === 'teacher') {
-			const groups = await Group.find({ teacher: req.user._id })
+			groups = await Group.find({ teacher: req.user._id })
 				.populate('students', 'name phone')
 				.populate('teacher', 'name phone')
-			return res.json(groups)
+		} else {
+			groups = await Group.find()
+				.populate('students', 'name phone')
+				.populate('teacher', 'name phone')
 		}
-
-		const groups = await Group.find()
-			.populate('students', 'name phone')
-			.populate('teacher', 'name phone')
-
 		res.json(groups)
 	} catch (err) {
 		res.status(500).json({ message: err.message })
@@ -46,7 +55,7 @@ const getGroups = async (req, res) => {
 // UPDATE group (ADMIN)
 const updateGroup = async (req, res) => {
 	try {
-		const { name, schedule, teacherId } = req.body
+		const { name, schedule, teacherId, level } = req.body
 		const group = await Group.findById(req.params.id)
 
 		if (!group) {
@@ -54,8 +63,10 @@ const updateGroup = async (req, res) => {
 		}
 
 		if (name) group.name = name
-		if (schedule) group.schedule = schedule
+		if (Array.isArray(schedule) && schedule.length > 0)
+			group.schedule = schedule
 		if (teacherId) group.teacher = teacherId
+		if (level) group.level = level
 
 		await group.save()
 		res.json(group)
@@ -68,9 +79,7 @@ const updateGroup = async (req, res) => {
 const deleteGroup = async (req, res) => {
 	try {
 		const group = await Group.findById(req.params.id)
-		if (!group) {
-			return res.status(404).json({ message: 'Group not found' })
-		}
+		if (!group) return res.status(404).json({ message: 'Group not found' })
 
 		await group.deleteOne()
 		res.json({ message: 'Group removed' })
@@ -79,15 +88,13 @@ const deleteGroup = async (req, res) => {
 	}
 }
 
-// ✅ ADD STUDENT TO GROUP (ADMIN / TEACHER)
+// ADD STUDENT TO GROUP (ADMIN / TEACHER)
 const addStudentToGroup = async (req, res) => {
 	try {
 		const { groupId, studentId } = req.body
 
 		const group = await Group.findById(groupId)
-		if (!group) {
-			return res.status(404).json({ message: 'Group not found' })
-		}
+		if (!group) return res.status(404).json({ message: 'Group not found' })
 
 		const student = await User.findById(studentId)
 		if (!student || student.role !== 'student') {
@@ -104,10 +111,7 @@ const addStudentToGroup = async (req, res) => {
 		await group.save()
 		await student.save()
 
-		res.json({
-			message: 'Student added to group successfully',
-			group,
-		})
+		res.json({ message: 'Student added to group successfully', group })
 	} catch (err) {
 		res.status(500).json({ message: err.message })
 	}

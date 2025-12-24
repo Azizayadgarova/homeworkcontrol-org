@@ -8,6 +8,9 @@ const authRoutes = require('./routes/authRoutes')
 const groupRoutes = require('./routes/groupRoutes')
 const taskRoutes = require('./routes/taskRoutes')
 const submissionRoutes = require('./routes/submissionRoutes')
+const userRoutes = require('./routes/userRoutes') // <-- qo'shildi
+const seedDefaultTasks = require('./utils/seedDefaultTasks')
+seedDefaultTasks()
 
 // Swagger
 const { swaggerDocs } = require('./config/swagger')
@@ -23,6 +26,7 @@ app.use('/api/auth', authRoutes)
 app.use('/api/groups', groupRoutes)
 app.use('/api/tasks', taskRoutes)
 app.use('/api/submissions', submissionRoutes)
+app.use('/api/users', userRoutes) // <-- user CRUD routing
 app.use('/api/stats', require('./routes/statsRoutes'))
 
 // Swagger

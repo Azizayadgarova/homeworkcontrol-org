@@ -1,42 +1,64 @@
-const Task = require('../models/Task')
-const Group = require('../models/Group')
+const User = require('../models/User')
 
-// Guruhlar ro'yxatini olish
-exports.getGroups = async (req, res) => {
+// GET users by role
+const getUsersByRole = async (req, res) => {
 	try {
-		const groups = await Group.find({ teacher: req.user.id }).populate(
-			'students'
-		)
-		res.json(groups)
+		const { role } = req.query
+		if (!role) return res.status(400).json({ message: 'Role is required' })
+
+		const users = await User.find({ role }).select('_id name phone role')
+		res.json(users)
 	} catch (err) {
 		res.status(500).json({ message: err.message })
 	}
 }
 
-// Guruhdagi o'quvchilar va vazifalar
-exports.getGroupTasks = async (req, res) => {
+// CREATE user
+const createUser = async (req, res) => {
 	try {
-		const { groupId } = req.params
-		const tasks = await Task.find({ group: groupId }).populate('student')
-		res.json(tasks)
+		const { name, phone, password, role } = req.body
+		const exists = await User.findOne({ phone })
+		if (exists) return res.status(400).json({ message: 'User already exists' })
+
+		const user = await User.create({ name, phone, password, role })
+		res.status(201).json(user)
 	} catch (err) {
 		res.status(500).json({ message: err.message })
 	}
 }
 
-// Ball va comment qo'yish
-exports.gradeTask = async (req, res) => {
+// UPDATE user
+const updateUser = async (req, res) => {
 	try {
-		const { taskId } = req.params
-		const { score, status, comment } = req.body
-		const task = await Task.findByIdAndUpdate(
-			taskId,
-			{ score, status, comment },
+		const { id } = req.params
+		const { name, phone, role } = req.body
+		const user = await User.findByIdAndUpdate(
+			id,
+			{ name, phone, role },
 			{ new: true }
 		)
-		res.json(task)
+		if (!user) return res.status(404).json({ message: 'User not found' })
+		res.json(user)
 	} catch (err) {
 		res.status(500).json({ message: err.message })
 	}
 }
-	
+
+// DELETE user
+const deleteUser = async (req, res) => {
+	try {
+		const { id } = req.params
+		const user = await User.findByIdAndDelete(id)
+		if (!user) return res.status(404).json({ message: 'User not found' })
+		res.json({ message: 'User deleted successfully' })
+	} catch (err) {
+		res.status(500).json({ message: err.message })
+	}
+}
+
+module.exports = {
+	getUsersByRole,
+	createUser,
+	updateUser,
+	deleteUser,
+}

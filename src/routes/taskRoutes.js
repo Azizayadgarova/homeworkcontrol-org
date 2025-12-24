@@ -1,11 +1,15 @@
 const express = require('express')
 const router = express.Router()
+
 const {
 	createTask,
 	getTasks,
 	updateTask,
 	deleteTask,
+	getStudentTasks,
+	createCustomTask,
 } = require('../controllers/taskController')
+
 const { protect } = require('../middlewares/authMiddleware')
 const { authorizeRoles } = require('../middlewares/roleMiddleware')
 
@@ -31,37 +35,32 @@ router.get('/', protect, getTasks)
  *     tags: [Tasks]
  *     security:
  *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - title
- *               - description
- *               - lessonNumber
- *               - deadline
- *               - groupId
- *             properties:
- *               title:
- *                 type: string
- *               description:
- *                 type: string
- *               lessonNumber:
- *                 type: number
- *               deadline:
- *                 type: string
- *                 format: date-time
- *               groupId:
- *                 type: string
- *     responses:
- *       201:
- *         description: Task created
  */
 router.post('/', protect, authorizeRoles('admin', 'teacher'), createTask)
 
+/**
+ * Update task
+ */
 router.patch('/:id', protect, authorizeRoles('admin', 'teacher'), updateTask)
+
+/**
+ * Delete task
+ */
 router.delete('/:id', protect, authorizeRoles('admin', 'teacher'), deleteTask)
+
+/**
+ * 🎓 STUDENT — levelga mos vazifalar (default + custom)
+ */
+router.get('/student', protect, authorizeRoles('student'), getStudentTasks)
+
+/**
+ * 👨‍🏫 TEACHER / ADMIN — custom task qo‘shish
+ */
+router.post(
+	'/custom',
+	protect,
+	authorizeRoles('teacher', 'admin'),
+	createCustomTask
+)
 
 module.exports = router

@@ -69,4 +69,40 @@ const deleteTask = async (req, res) => {
 	}
 }
 
-module.exports = { createTask, getTasks, updateTask, deleteTask }
+// Custom task yaratish (teacher/admin)
+const createCustomTask = async (req, res) => {
+	try {
+		const { title, description, groupId, assignType } = req.body
+
+		const task = await Task.create({
+			title,
+			description,
+			group: groupId,
+			assignType, // all | self
+			createdBy: req.user._id,
+		})
+
+		res.status(201).json(task)
+	} catch (err) {
+		res.status(500).json({ message: err.message })
+	}
+}
+
+// Studentga tasklarni olish
+const getStudentTasks = async (req, res) => {
+	try {
+		const tasks = await Task.find({ assignedTo: req.user._id })
+		res.json(tasks)
+	} catch (err) {
+		res.status(500).json({ message: err.message })
+	}
+}
+
+module.exports = {
+	createTask,
+	getTasks,
+	updateTask,
+	deleteTask,
+	createCustomTask,
+	getStudentTasks, // ✅ MUHIM
+}
