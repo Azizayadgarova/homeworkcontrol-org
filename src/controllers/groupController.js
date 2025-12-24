@@ -4,22 +4,18 @@ const User = require('../models/User')
 // CREATE group (ADMIN)
 const createGroup = async (req, res) => {
 	try {
-		const { name, schedule, teacherId, students, level } = req.body
+		const { name, schedule = [], teacherId, level } = req.body
 
-		if (!level) return res.status(400).json({ message: 'Level is required' })
-		if (!Array.isArray(schedule) || schedule.length === 0)
-			return res.status(400).json({ message: 'Schedule is required' })
-
-		const teacher = await User.findById(teacherId)
-		if (!teacher || teacher.role !== 'teacher')
-			return res.status(400).json({ message: 'Invalid teacher ID' })
+		if (!name || !level) {
+			return res.status(400).json({ message: 'Name and level required' })
+		}
 
 		const group = await Group.create({
 			name,
-			schedule,
-			teacher: teacherId,
-			students: students || [],
 			level,
+			schedule,
+			teacher: teacherId || null,
+			students: [],
 		})
 
 		res.status(201).json(group)
@@ -28,7 +24,6 @@ const createGroup = async (req, res) => {
 	}
 }
 
-// GET groups
 const getGroups = async (req, res) => {
 	try {
 		let groups
