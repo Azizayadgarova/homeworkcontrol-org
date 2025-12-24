@@ -6,6 +6,8 @@ const {
 	updateGroup,
 	deleteGroup,
 	getGroupById,
+	addStudentToGroup,
+	removeStudentFromGroup,
 } = require('../controllers/groupController')
 const { protect } = require('../middlewares/authMiddleware')
 const { authorizeRoles } = require('../middlewares/roleMiddleware')
@@ -21,7 +23,19 @@ router.patch('/:id', protect, authorizeRoles('admin'), updateGroup)
 
 // DELETE group
 router.delete('/:id', protect, authorizeRoles('admin'), deleteGroup)
+
 // GET group by ID
 router.get('/:id', protect, getGroupById)
+
+// ADD student to group
+router.post('/add-student', protect, authorizeRoles('admin'), addStudentToGroup)
+
+// REMOVE student from group
+router.post(
+	'/remove-student',
+	protect,
+	authorizeRoles('admin'),
+	removeStudentFromGroup
+)
 
 module.exports = router

@@ -6,18 +6,13 @@ const createGroup = async (req, res) => {
 	try {
 		const { name, schedule, teacherId, students, level } = req.body
 
-		if (!level) {
-			return res.status(400).json({ message: 'Level is required' })
-		}
-
-		if (!Array.isArray(schedule) || schedule.length === 0) {
+		if (!level) return res.status(400).json({ message: 'Level is required' })
+		if (!Array.isArray(schedule) || schedule.length === 0)
 			return res.status(400).json({ message: 'Schedule is required' })
-		}
 
 		const teacher = await User.findById(teacherId)
-		if (!teacher || teacher.role !== 'teacher') {
+		if (!teacher || teacher.role !== 'teacher')
 			return res.status(400).json({ message: 'Invalid teacher ID' })
-		}
 
 		const group = await Group.create({
 			name,
@@ -57,10 +52,7 @@ const updateGroup = async (req, res) => {
 	try {
 		const { name, schedule, teacherId, level } = req.body
 		const group = await Group.findById(req.params.id)
-
-		if (!group) {
-			return res.status(404).json({ message: 'Group not found' })
-		}
+		if (!group) return res.status(404).json({ message: 'Group not found' })
 
 		if (name) group.name = name
 		if (Array.isArray(schedule) && schedule.length > 0)
@@ -88,7 +80,7 @@ const deleteGroup = async (req, res) => {
 	}
 }
 
-// ADD STUDENT TO GROUP (ADMIN / TEACHER)
+// ADD STUDENT TO GROUP
 const addStudentToGroup = async (req, res) => {
 	try {
 		const { groupId, studentId } = req.body
@@ -97,13 +89,11 @@ const addStudentToGroup = async (req, res) => {
 		if (!group) return res.status(404).json({ message: 'Group not found' })
 
 		const student = await User.findById(studentId)
-		if (!student || student.role !== 'student') {
+		if (!student || student.role !== 'student')
 			return res.status(404).json({ message: 'Student not found' })
-		}
 
-		if (group.students.includes(studentId)) {
+		if (group.students.includes(studentId))
 			return res.status(400).json({ message: 'Student already in group' })
-		}
 
 		group.students.push(studentId)
 		student.group = groupId
@@ -117,6 +107,31 @@ const addStudentToGroup = async (req, res) => {
 	}
 }
 
+// REMOVE STUDENT FROM GROUP
+const removeStudentFromGroup = async (req, res) => {
+	try {
+		const { groupId, studentId } = req.body
+
+		const group = await Group.findById(groupId)
+		if (!group) return res.status(404).json({ message: 'Group not found' })
+
+		const student = await User.findById(studentId)
+		if (!student || student.role !== 'student')
+			return res.status(404).json({ message: 'Student not found' })
+
+		// Guruhdan o‘quvchini olib tashlash
+		group.students = group.students.filter(id => id.toString() !== studentId)
+		student.group = undefined // student.group maydonini tozalash
+
+		await group.save()
+		await student.save()
+
+		res.json({ message: 'Student removed from group', group })
+	} catch (err) {
+		res.status(500).json({ message: err.message })
+	}
+}
+
 // GET group by ID
 const getGroupById = async (req, res) => {
 	try {
@@ -124,9 +139,7 @@ const getGroupById = async (req, res) => {
 			.populate('students', 'name phone')
 			.populate('teacher', 'name phone')
 
-		if (!group) {
-			return res.status(404).json({ message: 'Group not found' })
-		}
+		if (!group) return res.status(404).json({ message: 'Group not found' })
 
 		res.json(group)
 	} catch (err) {
@@ -140,5 +153,6 @@ module.exports = {
 	updateGroup,
 	deleteGroup,
 	addStudentToGroup,
-	getGroupById, // qo'shildi
+	removeStudentFromGroup, // yangi qo‘shildi
+	getGroupById,
 }
