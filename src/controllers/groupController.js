@@ -117,10 +117,28 @@ const addStudentToGroup = async (req, res) => {
 	}
 }
 
+// GET group by ID
+const getGroupById = async (req, res) => {
+	try {
+		const group = await Group.findById(req.params.id)
+			.populate('students', 'name phone')
+			.populate('teacher', 'name phone')
+
+		if (!group) {
+			return res.status(404).json({ message: 'Group not found' })
+		}
+
+		res.json(group)
+	} catch (err) {
+		res.status(500).json({ message: err.message })
+	}
+}
+
 module.exports = {
 	createGroup,
 	getGroups,
 	updateGroup,
 	deleteGroup,
 	addStudentToGroup,
+	getGroupById, // qo'shildi
 }
