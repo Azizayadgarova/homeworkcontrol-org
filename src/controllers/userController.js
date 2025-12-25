@@ -14,13 +14,25 @@ const getUsersByRole = async (req, res) => {
 }
 
 // CREATE user
+// CREATE user
 const createUser = async (req, res) => {
 	try {
-		const { name, phone, password, role } = req.body
+		const { name, phone, password, role, childId } = req.body // childId ota-ona uchun
 		const exists = await User.findOne({ phone })
 		if (exists) return res.status(400).json({ message: 'User already exists' })
 
-		const user = await User.create({ name, phone, password, role })
+		const userData = { name, phone, password, role }
+
+		// agar parent bo'lsa, child maydonini to'ldirish
+		if (role === 'parent' && childId) {
+			const child = await User.findById(childId)
+			if (!child || child.role !== 'student') {
+				return res.status(400).json({ message: 'Student not found for parent' })
+			}
+			userData.child = childId
+		}
+
+		const user = await User.create(userData)
 		res.status(201).json(user)
 	} catch (err) {
 		res.status(500).json({ message: err.message })
